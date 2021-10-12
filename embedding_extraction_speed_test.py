@@ -16,6 +16,7 @@ class EmbeddingExtractionSpeedTest:
             'sultan/BioM-ALBERT-xxlarge',
             'sultan/BioM-ALBERT-xxlarge-PMC',
             'pretrained_models/BioMegatron_bert_345mUncased',
+            'microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract'
         ]
 
         self.nlp = spacy.load('en_core_web_sm')
