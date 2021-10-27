@@ -19,6 +19,17 @@ class DocParser:
         """
         raise NotImplementedError
 
+    def get_id(self, doc):
+        """Extracts the id of the document.
+
+        Args:
+            doc (dict): The document represented as a dict.
+        
+        Returns:
+            int: The id of the document.
+        """
+        return doc["pmid"]
+
 
 class SentenceSegmentationDocParser(DocParser):
     """A class to extract the title and the segmented sentences of the abstract.
