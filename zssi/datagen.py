@@ -18,6 +18,7 @@ class DocGenerator:
         
         Yields:
             list(str): A single batch of examples.
+            list(int): The corresponding document ids.
         """
         raise NotImplementedError
 
@@ -39,19 +40,23 @@ class JsonlDocGenerator(DocGenerator):
     def generate(self, batch_size):
         with jsonl.open(self.path_to_jsonl) as f:
             gen = iter(f)
-            parsed_docs = deque()
-            batch = []
+            parsed_docs, doc_ids = deque(), deque()
+            batch, batch_ids = [], []
             exhausted = False
             while not exhausted:
                 try:
                     doc = next(gen)
-                    parsed_docs.extend(self.doc_parser.parse(doc))
+                    parsed_doc = self.doc_parser.parse(doc)
+                    doc_id = self.doc_parser.get_id(doc)
+                    parsed_docs.extend(parsed_doc)
+                    doc_ids.extend([doc_id for _ in range(len(parsed_doc))])
                     while len(batch) < batch_size and parsed_docs:
                         batch.append(parsed_docs.popleft())
-                    if len(batch) == batch_size:
-                        yield batch
-                        batch = []
+                        batch_ids.append(doc_ids.popleft())
+                        if len(batch) == batch_size:
+                            yield batch, batch_ids
+                            batch, batch_ids = [], []
                 except StopIteration:
                     exhausted = True
             if len(batch) > 0:
-                yield batch
+                yield batch, batch_ids
