@@ -14,11 +14,11 @@ from zssi.parse import SentenceSegmentationDocParser, WholeTextDocParser
 class EmbeddingExtractionSpeed:
     def __init__(self):
         self.TRANSFORMER_MODELS = [
-            'dmis-lab/biobert-base-cased-v1.2', 'allenai/biomed_roberta_base',
-            'sultan/BioM-ELECTRA-Base-Discriminator',
-            'sultan/BioM-ELECTRA-Base-Generator',
-            'sultan/BioM-ELECTRA-Large-Generator',
-            'sultan/BioM-ALBERT-xxlarge', 'sultan/BioM-ALBERT-xxlarge-PMC',
+            #'dmis-lab/biobert-base-cased-v1.2', 'allenai/biomed_roberta_base',
+            #'sultan/BioM-ELECTRA-Base-Discriminator',
+            #'sultan/BioM-ELECTRA-Base-Generator',
+            #'sultan/BioM-ELECTRA-Large-Generator',
+            #'sultan/BioM-ALBERT-xxlarge', 'sultan/BioM-ALBERT-xxlarge-PMC',
             'pretrained_models/BioMegatron_bert_345mUncased',
             'microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract'
         ]
