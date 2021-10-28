@@ -1,7 +1,11 @@
+import filecmp
+import os
 import pytest
 
 from zssi.datagen import JsonlDocGenerator
+from zssi.embed import Embedder
 from zssi.parse import SentenceSegmentationDocParser, WholeTextDocParser
+from zssi.write import JsonlEmbeddingWriter
 
 
 @pytest.fixture
@@ -130,24 +134,24 @@ def sample_2_docs_flat_batches_whole_text_doc_ids():
 class TestDocParsing:
     def test_sentence_segmentation_doc_parser_parsing(
             self, sample_doc, sample_doc_segmented_sentences):
-        parser = SentenceSegmentationDocParser()
-        parsed_doc = parser.parse(sample_doc)
+        doc_parser = SentenceSegmentationDocParser()
+        parsed_doc = doc_parser.parse(sample_doc)
         assert parsed_doc == sample_doc_segmented_sentences
 
     def test_sentence_segmentation_doc_parser_doc_id(self, sample_doc):
-        parser = SentenceSegmentationDocParser()
-        doc_id = parser.get_id(sample_doc)
+        doc_parser = SentenceSegmentationDocParser()
+        doc_id = doc_parser.get_id(sample_doc)
         assert doc_id == sample_doc["pmid"]
 
     def test_whole_text_doc_parser_parsing(self, sample_doc,
                                            sample_doc_whole_text):
-        parser = WholeTextDocParser()
-        parsed_doc = parser.parse(sample_doc)
+        doc_parser = WholeTextDocParser()
+        parsed_doc = doc_parser.parse(sample_doc)
         assert parsed_doc == sample_doc_whole_text
 
     def test_whole_text_doc_parser_parsing_doc_id(self, sample_doc):
-        parser = WholeTextDocParser()
-        doc_id = parser.get_id(sample_doc)
+        doc_parser = WholeTextDocParser()
+        doc_id = doc_parser.get_id(sample_doc)
         assert doc_id == sample_doc["pmid"]
 
 
@@ -195,3 +199,23 @@ class TestDocDatagen:
             flat_batches,
             batch_size) and batches_doc_ids == self.nest_flat_batches(
                 flat_batches_doc_ids, batch_size)
+
+
+class TestEmbeddingAndWriting:
+    @pytest.mark.parametrize(
+        "doc_parser,path_to_jsonl_embeddings",
+        [(SentenceSegmentationDocParser(),
+          'test_data/test_2006_2_docs_segmented_sentences_embeddings.jsonl'),
+         (WholeTextDocParser(),
+          'test_data/test_2006_2_docs_whole_text_embeddings.jsonl')])
+    def test_embedding_and_writing_to_jsonl(self, doc_parser,
+                                            path_to_jsonl_embeddings):
+        datagen = JsonlDocGenerator(
+            'test_data/test_2006_text_only_2_docs.jsonl', doc_parser)
+        embedder = Embedder('dmis-lab/biobert-base-cased-v1.2', 'cls')
+        writer = JsonlEmbeddingWriter('test_data/test_embeddings.jsonl',
+                                      n_objs_per_write=500)
+        embedder.embed(datagen, 10, writer)
+        assert filecmp.cmp('test_data/test_embeddings.jsonl',
+                           path_to_jsonl_embeddings)
+        os.remove('test_data/test_embeddings.jsonl')
