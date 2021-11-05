@@ -62,10 +62,13 @@ class JsonlEmbeddingWriter(EmbeddingWriter):
         self.current_doc_id = None
         self.objs_to_write = []
         self.error_doc_ids = set()
+        self.total_written_objs = 0
 
     def _write(self):
         self.writer.write_all(self.objs_to_write)
+        self.total_written_objs += len(self.objs_to_write)
         self.objs_to_write = []
+        print(f"Total written objs: {self.total_written_objs}")
 
     def start(self):
         self.f = open(self.path_to_jsonl, mode='w')
