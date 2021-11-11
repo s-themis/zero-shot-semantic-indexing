@@ -1,7 +1,10 @@
 from zssi.datagen import JsonlDocGenerator
+from zssi.descriptor import DescriptorAugmenter
 from zssi.embed import Embedder
 from zssi.parse import SentenceSegmentationDocParser, WholeTextDocParser
 from zssi.write import JsonlEmbeddingWriter, PickleEmbeddingWriter
+
+from descriptors.test_2006_emerging_fine_grained_descriptors import descriptors
 
 
 def run_1():
@@ -58,6 +61,13 @@ def run_3():
     embedder.embed(datagen=datagen, batch_size=batch_size, writer=writer)
 
 
+def run_4():
+
+    daug = DescriptorAugmenter(descriptor_objs=descriptors,
+                               output_name="test_2006_emerging_fine_grained")
+    daug.save_all_flavors()
+
+
 if __name__ == "__main__":
 
-    run_3()
+    run_4()
