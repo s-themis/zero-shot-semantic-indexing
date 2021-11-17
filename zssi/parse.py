@@ -60,3 +60,14 @@ class WholeTextDocParser(DocParser):
         whole_text = []
         whole_text.append(doc['title'] + " " + doc['abstractText'])
         return whole_text
+
+
+class AugmentedDescriptorParser(DocParser):
+    def __init__(self):
+        pass
+
+    def parse(self, doc):
+        return [doc["label"]]
+
+    def get_id(self, doc):
+        return doc["UI"]

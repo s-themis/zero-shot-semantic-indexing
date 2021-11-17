@@ -212,3 +212,26 @@ class PickleEmbeddingWriter(EmbeddingWriter):
 
         if self.objs_to_write:
             self._write()
+
+
+class JsonlLabelEmbeddingWriter:
+    def __init__(self, path_to_jsonl):
+        self.path_to_jsonl = path_to_jsonl
+        self.objs_to_write = []
+
+    def start(self):
+        pass
+
+    def write(self, embeddings, doc_ids):
+        for embedding, doc_id in zip(embeddings, doc_ids):
+            self.objs_to_write.append({
+                "UI": doc_id,
+                "embedding": embedding.tolist()
+            })
+
+    def finish(self):
+        f = open(self.path_to_jsonl, mode='w')
+        writer = jsonl.Writer(f)
+        writer.write_all(self.objs_to_write)
+        writer.close()
+        f.close()
