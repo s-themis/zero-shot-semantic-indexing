@@ -4,6 +4,7 @@ from zssi.datagen import JsonlDocGenerator
 from zssi.descriptor import DescriptorAugmenter
 from zssi.embed import Embedder
 from zssi.parse import SentenceSegmentationDocParser, WholeTextDocParser, AugmentedDescriptorParser
+from zssi.similarity import calculate_similarities
 from zssi.write import JsonlEmbeddingWriter, PickleEmbeddingWriter, JsonlLabelEmbeddingWriter
 
 from descriptors.test_2006_emerging_fine_grained_descriptors import descriptors
@@ -89,6 +90,28 @@ def run_5():
         embedder.embed(datagen=datagen, batch_size=batch_size, writer=writer)
 
 
+def run_6():
+
+    document_embeddings_flavors = ["sentence_segmentation", "whole_text"]
+    descriptor_embeddings_flavors = [
+        "name", "name_entry_terms", "name_scope_note",
+        "name_entry_terms_scope_note"
+    ]
+
+    for doc_emb_flavor in document_embeddings_flavors:
+        for descr_emb_flavor in descriptor_embeddings_flavors:
+            print("\n\n")
+            print(
+                f"Calculating similarities for {doc_emb_flavor}, {descr_emb_flavor}"
+            )
+            path_to_doc_embeddings_dir = "data/2006/embeddings/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/docs/" + doc_emb_flavor
+            path_to_descr_embeddings_dir = "data/2006/embeddings/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/descriptors/" + descr_emb_flavor
+            path_to_similarities_dir = "data/2006/similarities/" + doc_emb_flavor + "_" + descr_emb_flavor
+            calculate_similarities(path_to_doc_embeddings_dir,
+                                   path_to_descr_embeddings_dir,
+                                   path_to_similarities_dir)
+
+
 if __name__ == "__main__":
 
-    run_5()
+    run_6()
