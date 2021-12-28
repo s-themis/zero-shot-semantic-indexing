@@ -106,7 +106,7 @@ def run_6():
             )
             path_to_doc_embeddings_dir = "data/2006/embeddings/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/docs/" + doc_emb_flavor
             path_to_descr_embeddings_dir = "data/2006/embeddings/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/descriptors/" + descr_emb_flavor
-            path_to_similarities_dir = "data/2006/similarities/" + doc_emb_flavor + "_" + descr_emb_flavor
+            path_to_similarities_dir = "data/2006/similarities_v2/" + doc_emb_flavor + "_" + descr_emb_flavor
             calculate_similarities(path_to_doc_embeddings_dir,
                                    path_to_descr_embeddings_dir,
                                    path_to_similarities_dir)
