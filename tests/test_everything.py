@@ -1,5 +1,6 @@
 import filecmp
 import os
+
 import pytest
 
 from zssi.datagen import JsonlDocGenerator
