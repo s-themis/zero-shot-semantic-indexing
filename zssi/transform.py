@@ -3,7 +3,7 @@ import json
 import jsonlines as jsonl
 
 
-def json_to_jsonl(path_to_json, path_to_jsonl, fields=None):
+def json_to_jsonl(path_to_json, path_to_jsonl, fields):
 
     with open(path_to_json, "r") as f:
         data = json.load(f)
