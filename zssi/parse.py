@@ -1,9 +1,9 @@
 import spacy
 
 
-class DocParser:
+class Parser:
     """Defines the interface that any subclass should implement.
-    
+
     """
     def __init__(self):
         raise NotImplementedError
@@ -13,7 +13,7 @@ class DocParser:
 
         Args:
             doc (dict): The document to parse represented as a dict.
-        
+
         Returns:
             List(str): The parsed document.
         """
@@ -24,14 +24,14 @@ class DocParser:
 
         Args:
             doc (dict): The document represented as a dict.
-        
+
         Returns:
             int: The id of the document.
         """
         return doc["pmid"]
 
 
-class SentenceSegmentationDocParser(DocParser):
+class SentenceSegmentationParser(Parser):
     """A class to extract the title and the segmented sentences of the abstract.
 
     """
@@ -49,9 +49,9 @@ class SentenceSegmentationDocParser(DocParser):
         return segmented_sentences
 
 
-class WholeTextDocParser(DocParser):
+class WholeTextParser(Parser):
     """A class to extract the title and the abstract as a single piece of text.
-    
+
     """
     def __init__(self):
         pass
@@ -62,7 +62,7 @@ class WholeTextDocParser(DocParser):
         return whole_text
 
 
-class AugmentedDescriptorParser(DocParser):
+class AugmentedDescriptorParser(Parser):
     def __init__(self):
         pass
 
