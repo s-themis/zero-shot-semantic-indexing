@@ -6,7 +6,7 @@ charset-normalizer==2.0.6
 click==8.0.1
 cymem==2.0.5
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.1.0/en_core_web_sm-3.1.0-py3-none-any.whl
-filelock==3.0.12
+filelock==3.4.0
 huggingface-hub==0.0.17
 idna==3.2
 iniconfig==1.1.1

@@ -12,3 +12,6 @@ __pycache__
 .python-version
 
 # Other
+data/
+test_data/
+pretrained_models/
