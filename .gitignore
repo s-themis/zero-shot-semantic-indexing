@@ -8,10 +8,17 @@ venv/
 __pycache__
 *.pyc
 
-# pyenv
-.python-version
-
 # Other
-data/
-test_data/
+data/external/*.bin
+data/external/*.json
+data/external/*.csv
+
+data/external-transformed/*.json
+data/external-transformed/*.jsonl
+
+data/experimental/*.json
+
+data/*/embeddings/*.jsonl
+data/*/similarities/*.jsonl
+
 pretrained_models/
