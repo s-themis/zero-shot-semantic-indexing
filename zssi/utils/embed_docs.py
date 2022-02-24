@@ -49,7 +49,7 @@ if __name__ == "__main__":
         output_doc["newFGDescriptors"] = doc["newFGDescriptors"]
         return output_doc
 
-    def embed(docs_file: str, destination_file: str, segment: bool, modelhub_model: str, pooling_mode: str):
+    def embed_docs(docs_file: str, destination_file: str, segment: bool, modelhub_model: str, pooling_mode: str):
         """
         Calculate embeddings from input file and save to output file.
 
@@ -71,4 +71,4 @@ if __name__ == "__main__":
     segment = False
     modelhub_model = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
     pooling_mode = "cls"
-    embed(docs_file, destination_file, segment, modelhub_model, pooling_mode)
+    embed_docs(docs_file, destination_file, segment, modelhub_model, pooling_mode)
