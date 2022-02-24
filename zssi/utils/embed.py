@@ -45,6 +45,8 @@ if __name__ == "__main__":
         output_doc = dict()
         output_doc["pmid"] = doc["pmid"]
         output_doc["embeddings"] = doc["embeddings"]
+        output_doc["Descriptor_UIs"] = doc["Descriptor_UIs"]
+        output_doc["newFGDescriptors"] = doc["newFGDescriptors"]
         return output_doc
 
     def embed(docs_file: str, destination_file: str, segment: bool, modelhub_model: str, pooling_mode: str):
