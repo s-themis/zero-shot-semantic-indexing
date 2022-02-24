@@ -4,7 +4,7 @@ import pathlib
 import jsonlines as jsonl
 
 
-def json_to_jsonl(json_file: str, destination: str, limit: int = None):
+def json_to_jsonl(json_file: str, destination: str, data_field: str, limit: int):
     """
     Transform json file to jsonl file.
 
@@ -25,7 +25,7 @@ def json_to_jsonl(json_file: str, destination: str, limit: int = None):
         raise ValueError("Destination must be a directory or .jsonl file.")
     with open(json_file, "r") as f:
         data = json.load(f)
-    documents = data["documents"]
+    documents = data[data_field]
     if limit:
         documents = documents[:limit]
     with jsonl.open(jsonl_file, "w") as f:
