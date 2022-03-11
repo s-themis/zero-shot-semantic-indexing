@@ -1,7 +1,7 @@
 if __name__ == "__main__":    # noqa: C901
 
     import json
-    from typing import Callable
+    from typing import Callable, List
 
     import dask.bag as db
     import numpy as np
@@ -13,7 +13,7 @@ if __name__ == "__main__":    # noqa: C901
             for line in f:
                 descriptors.append(json.loads(line))
         for descriptor in descriptors:
-            descriptor["embedding"] = np.array(descriptor["embeddings"])
+            descriptor["embedding"] = np.array(descriptor["embedding"])
             descriptor["PHex_UI"] = set(descriptor["PHex_UI"])
         return descriptors
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":    # noqa: C901
         del doc["embeddings"]
         return doc
 
-    def similarity(docs_embeddings_file: str, descriptors_embedding_file: str, destination_file: str, similarity_func: Callable):
+    def similarity(docs_embeddings_file: str, descriptors_embedding_file: str, destination_files: List[str], similarity_func: Callable):
         """
         Calculate the similarities between document and descriptor embeddings.
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":    # noqa: C901
             destination_file (str): file or glob pattern for output
             similarity_func (callable): function that calculates the similarity between two embeddings
         """
-        client = Client(n_workers=1)    # noqa: F841
+        client = Client(n_workers=8)    # noqa: F841
         descriptors = load_descriptors(descriptors_embedding_file)
         db.read_text(docs_embeddings_file).map(json.loads).map(preprocess_doc).map(lambda doc: add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, similarity_func)).map(to_output_doc).map(json.dumps).to_textfiles(destination_file)
 
