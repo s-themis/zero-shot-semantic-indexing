@@ -37,8 +37,7 @@ if __name__ == "__main__":
 
         def add_embeddings(self, doc: dict) -> dict:
             embeddings = self.model.encode(sentences=doc["parsed_text"]).tolist()
-            keys = list(range(len(embeddings)))
-            doc["embeddings"] = dict(zip(keys, embeddings))
+            doc["embeddings"] = embeddings
             return doc
 
     def to_output_doc(doc):
@@ -61,13 +60,13 @@ if __name__ == "__main__":
 
         Return: None
         """
-        client = Client(n_workers=1)    # noqa: F841
+        client = Client(n_workers=8)    # noqa: F841
         doc_parser = DocParser()
         doc_embedder = DocEmbedder(modelhub_model, pooling_mode)
         db.read_text(docs_file).map(json.loads).map(lambda doc: doc_parser.add_parsed_text(doc, segment)).map(doc_embedder.add_embeddings).map(to_output_doc).map(json.dumps).to_textfiles(destination_file)
 
-    docs_file = "data/experimental/test_docs_2006_limit_100.jsonl"
-    destination_file = ["data/experimental/test_docs_2006_limit_100_embeddings.jsonl.xz"]
+    docs_file = "data/external-transformed/test_docs_2006.jsonl"
+    destination_file = ["data/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/embeddings/test_docs_2006_wholetext.jsonl.xz"]
     segment = False
     modelhub_model = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
     pooling_mode = "cls"
