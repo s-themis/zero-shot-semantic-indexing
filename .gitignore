@@ -8,17 +8,11 @@ venv/
 __pycache__
 *.pyc
 
-# Other
-data/external/*.bin
-data/external/*.json
-data/external/*.csv
+# data
+data/*/
 
-data/external-transformed/*.json
-data/external-transformed/*.jsonl
+# dask
+dask-worker-space/
 
-data/experimental/*.json
-
-data/*/embeddings/*.jsonl
-data/*/similarities/*.jsonl
-
-pretrained_models/
+# .DS_Store
+.DS_Store
