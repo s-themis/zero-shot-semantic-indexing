@@ -3,8 +3,9 @@ import pathlib
 import jsonlines as jsonl
 
 
-def generate_descrs_variations(descrs_jsonl: str) -> None:
+def generate_descrs_variations(descrs_jsonl: str, dest_dir: str) -> None:
     descrs_jsonl = pathlib.PurePath(descrs_jsonl)
+    dest_dir = pathlib.PurePath(dest_dir)
 
     variations = {
         "name": [],
@@ -36,7 +37,7 @@ def generate_descrs_variations(descrs_jsonl: str) -> None:
                 variations["name_entry_terms_scope_note"].append(d)
     
     for variation, descriptors in variations.items():
-        variation_jsonl = descrs_jsonl.with_name(descrs_jsonl.with_suffix("").name + f"_{variation}").with_suffix(".jsonl")
+        variation_jsonl = dest_dir.joinpath(descrs_jsonl.with_suffix("").name + f"_{variation}").with_suffix(".jsonl")
         with jsonl.open(variation_jsonl, "w") as f:
             f.write_all(descriptors)
 
@@ -46,6 +47,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--descrs_jsonl", type=str)
+    parser.add_argument("--dest_dir", type=str)
     args = parser.parse_args()
 
-    generate_descrs_variations(args.descrs_jsonl)
+    generate_descrs_variations(args.descrs_jsonl, args.dest_dir)
