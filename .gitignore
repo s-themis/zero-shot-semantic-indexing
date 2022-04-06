@@ -9,6 +9,7 @@ __pycache__
 *.pyc
 
 # data
+data/*
 data/*/
 
 # dask
@@ -16,3 +17,7 @@ dask-worker-space/
 
 # .DS_Store
 .DS_Store
+
+# datastores
+datastores/*
+datastores/*/
