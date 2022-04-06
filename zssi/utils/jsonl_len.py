@@ -2,23 +2,33 @@ import lzma
 import pathlib
 
 
-def jsonl_len(json_file: str) -> None:
+def jsonl_len(jsonl: str) -> None:
     """
     Return number of lines/objects in jsonl file.
 
     Args:
-        json_file (str): file to be transformed
+        jsonl (str): file to be transformed
 
     Return: int
     """
-    json_file = pathlib.Path(json_file)
+    jsonl = pathlib.Path(jsonl)
     res = 0
-    if json_file.suffix == ".xz":
-        with lzma.open(json_file, "r") as f:
+    if jsonl.suffix == ".xz":
+        with lzma.open(jsonl, "r") as f:
             for _ in f:
                 res += 1
     else:
-        with open(json_file, "r") as f:
+        with open(jsonl, "r") as f:
             for _ in f:
                 res += 1
-    print(res)
+    print(f"This file has {res} lines!")
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--jsonl", type=str)
+    args = parser.parse_args()
+
+    jsonl_len(args.jsonl)

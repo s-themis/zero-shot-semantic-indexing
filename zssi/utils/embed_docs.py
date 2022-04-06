@@ -1,73 +1,92 @@
+import spacy
+import time
+
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.models import Pooling, Transformer
+
+class DocParser:
+    def __init__(self, doc_segmentation: bool) -> None:
+        self.doc_segmentation = doc_segmentation
+        self.nlp = spacy.load('en_core_web_sm')
+
+    def add_parsed_text(self, doc: dict) -> dict:
+        parsed_text = []
+        if self.doc_segmentation:
+            parsed_text.append(doc['title'])
+            parsed_text.extend(
+                [str(sent) for sent in self.nlp(doc['abstractText']).sents])
+        else:
+            parsed_text.append(doc['title'] + " " + doc['abstractText'])
+        doc["parsed_text"] = parsed_text
+        return doc
+
+class DocEmbedder:
+    def __init__(self, modelhub_model: str, pooling_mode: str) -> None:
+        token_embedding_model = Transformer(modelhub_model)
+        pooling_model = Pooling(
+            token_embedding_model.get_word_embedding_dimension(),
+            pooling_mode)
+        model = SentenceTransformer(
+            modules=[token_embedding_model, pooling_model])
+        self.model = model
+        
+    def add_embeddings(self, doc: dict) -> dict:
+        embeddings = self.model.encode(sentences=doc["parsed_text"]).tolist()
+        doc["embeddings"] = embeddings
+        return doc
+
+class ProgressLogger:
+    def __init__(self, logging_interval: int) -> None:
+        self.count = 0
+        self.logging_interval = logging_interval
+        current_time = time.time()
+        self.start_time = current_time
+        self.last_print_time = current_time
+    
+    def log(self, doc: dict) -> dict:
+        self._log()
+        return doc
+    
+    def _log(self):
+        self.count += 1
+        current_time = time.time()
+        if self.count % self.logging_interval == 0:
+            total_time = current_time - self.start_time
+            current_rate = self.logging_interval / (current_time - self.last_print_time)
+            print(f"total progress: {self.count} | total time: {total_time:.2f} s | current rate {current_rate} 1/s")
+            self.last_print_time = current_time
+
+class DocFilter:
+    def __init__(self, keys_to_keep) -> None:
+        self.keys_to_keep = keys_to_keep
+    
+    def filter(self, doc: dict) -> dict:
+        filtered_doc = dict()
+        for key in self.keys_to_keep:
+            filtered_doc[key] = doc[key]
+        return filtered_doc
+
 if __name__ == "__main__":
 
+    import argparse
     import json
-
     import dask.bag as db
-    import spacy
+
     from dask.distributed import Client
-    from sentence_transformers import SentenceTransformer
-    from sentence_transformers.models import Pooling, Transformer
 
-    class DocParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test_docs_jsonl", type=str)
+    parser.add_argument("--modelhub_model", type=str)
+    parser.add_argument("--pooling_mode", type=str)
+    parser.add_argument("--doc_segmentation", action="store_true")
+    parser.add_argument("--dest_jsonl_xz", type=str)
+    parser.add_argument("--logging_interval", type=int)
+    args = parser.parse_args()
 
-        def __init__(self) -> None:
-            self.nlp = spacy.load('en_core_web_sm')
-
-        def add_parsed_text(self, doc: dict, segment: bool) -> dict:
-            parsed_text = []
-            if segment:
-                parsed_text.append(doc['title'])
-                parsed_text.extend(
-                    [str(sent) for sent in self.nlp(doc['abstractText']).sents])
-            else:
-                parsed_text.append(doc['title'] + " " + doc['abstractText'])
-            doc["parsed_text"] = parsed_text
-            return doc
-
-    class DocEmbedder:
-
-        def __init__(self, modelhub_model: str, pooling_mode: str) -> None:
-            token_embedding_model = Transformer(modelhub_model)
-            pooling_model = Pooling(
-                token_embedding_model.get_word_embedding_dimension(),
-                pooling_mode)
-            model = SentenceTransformer(
-                modules=[token_embedding_model, pooling_model])
-            self.model = model
-
-        def add_embeddings(self, doc: dict) -> dict:
-            embeddings = self.model.encode(sentences=doc["parsed_text"]).tolist()
-            doc["embeddings"] = embeddings
-            return doc
-
-    def to_output_doc(doc):
-        output_doc = dict()
-        output_doc["pmid"] = doc["pmid"]
-        output_doc["embeddings"] = doc["embeddings"]
-        output_doc["Descriptor_UIs"] = doc["Descriptor_UIs"]
-        output_doc["newFGDescriptors"] = doc["newFGDescriptors"]
-        return output_doc
-
-    def embed_docs(docs_file: str, destination_file: str, segment: bool, modelhub_model: str, pooling_mode: str):
-        """
-        Calculate embeddings from input file and save to output file.
-
-        Args:
-            docs_file (str): file or glob pattern for input docs
-            destination_file (str): file or glob pattern for output
-            modelhub_model (str): huggingface model name
-            pooling_mode (str): s-bert pooling mode
-
-        Return: None
-        """
-        client = Client(n_workers=8)    # noqa: F841
-        doc_parser = DocParser()
-        doc_embedder = DocEmbedder(modelhub_model, pooling_mode)
-        db.read_text(docs_file).map(json.loads).map(lambda doc: doc_parser.add_parsed_text(doc, segment)).map(doc_embedder.add_embeddings).map(to_output_doc).map(json.dumps).to_textfiles(destination_file)
-
-    docs_file = "data/external-transformed/test_docs_2006.jsonl"
-    destination_file = ["data/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/embeddings/test_docs_2006_wholetext.jsonl.xz"]
-    segment = False
-    modelhub_model = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
-    pooling_mode = "cls"
-    embed_docs(docs_file, destination_file, segment, modelhub_model, pooling_mode)
+    doc_parser = DocParser(args.doc_segmentation)
+    doc_embedder = DocEmbedder(args.modelhub_model, args.pooling_mode)
+    progress_logger = ProgressLogger(args.logging_interval)
+    doc_filter = DocFilter(keys_to_keep=["pmid", "embeddings", "Descriptor_UIs", "newFGDescriptors"])
+    
+    client = Client(n_workers=1)    # noqa: F841
+    db.read_text(args.test_docs_jsonl).map(json.loads).map(doc_parser.add_parsed_text).map(doc_embedder.add_embeddings).map(doc_filter.filter).map(progress_logger.log).map(json.dumps).to_textfiles([args.dest_jsonl_xz])

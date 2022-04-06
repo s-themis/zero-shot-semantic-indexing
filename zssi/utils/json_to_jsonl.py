@@ -1,32 +1,26 @@
 import json
-import pathlib
 
 import jsonlines as jsonl
 
 
-def json_to_jsonl(json_file: str, destination: str, data_field: str, limit: int):
-    """
-    Transform json file to jsonl file.
-
-    Args:
-        json_file (str): file to be transformed
-        destination (str): directory or .jsonl file
-        limit (int): number of objects to keep
-
-    Return: None
-    """
-    json_file = pathlib.Path(json_file)
-    destination = pathlib.Path(destination)
-    if destination.is_dir():
-        jsonl_file = destination.joinpath(json_file.with_suffix(".jsonl").name)
-    elif destination.suffix == ".jsonl":
-        jsonl_file = destination
-    else:
-        raise ValueError("Destination must be a directory or .jsonl file.")
-    with open(json_file, "r") as f:
+def json_to_jsonl(input_json: str, output_jsonl: str, objects_field: str, limit: int):
+    with open(input_json, "r") as f:
         data = json.load(f)
-    documents = data[data_field]
+    objects = data[objects_field]
     if limit:
-        documents = documents[:limit]
-    with jsonl.open(jsonl_file, "w") as f:
-        f.write_all(documents)
+        objects = objects[:limit]
+    with jsonl.open(output_jsonl, "w") as f:
+        f.write_all(objects)
+
+if __name__ == "__main__":
+
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_json", type=str)
+    parser.add_argument("--output_jsonl", type=str)
+    parser.add_argument("--objects_field", type=str)
+    parser.add_argument("--limit", type=int)
+    args = parser.parse_args()
+
+    json_to_jsonl(args.input_json, args.output_jsonl, args.objects_field, args.limit)
