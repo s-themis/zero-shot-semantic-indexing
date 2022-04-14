@@ -21,8 +21,8 @@ class DocParser:
         return doc
 
 class DocEmbedder:
-    def __init__(self, modelhub_model: str, pooling_mode: str) -> None:
-        token_embedding_model = Transformer(modelhub_model)
+    def __init__(self, modelhub_model: str, pooling_mode: str, do_lower_case: bool) -> None:
+        token_embedding_model = Transformer(modelhub_model, do_lower_case=do_lower_case)
         pooling_model = Pooling(
             token_embedding_model.get_word_embedding_dimension(),
             pooling_mode)
@@ -79,12 +79,13 @@ if __name__ == "__main__":
     parser.add_argument("--modelhub_model", type=str)
     parser.add_argument("--pooling_mode", type=str)
     parser.add_argument("--doc_segmentation", action="store_true")
+    parser.add_argument("--do_lower_case", action="store_true")
     parser.add_argument("--dest_jsonl_xz", type=str)
     parser.add_argument("--logging_interval", type=int)
     args = parser.parse_args()
 
     doc_parser = DocParser(args.doc_segmentation)
-    doc_embedder = DocEmbedder(args.modelhub_model, args.pooling_mode)
+    doc_embedder = DocEmbedder(args.modelhub_model, args.pooling_mode, args.do_lower_case)
     progress_logger = ProgressLogger(args.logging_interval)
     doc_filter = DocFilter(keys_to_keep=["pmid", "embeddings", "Descriptor_UIs", "newFGDescriptors"])
     
