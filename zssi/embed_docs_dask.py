@@ -70,6 +70,9 @@ if __name__ == "__main__":
 
     import argparse
     import json
+    import dask.bag as db
+
+    from dask.distributed import Client
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--test_docs_jsonl", type=str)
@@ -77,21 +80,14 @@ if __name__ == "__main__":
     parser.add_argument("--pooling_mode", type=str)
     parser.add_argument("--doc_segmentation", action="store_true")
     parser.add_argument("--do_lower_case", action="store_true")
-    parser.add_argument("--dest_jsonl", type=str)
+    parser.add_argument("--dest_jsonl_xz", type=str)
     parser.add_argument("--logging_interval", type=int)
     args = parser.parse_args()
-  
+
     doc_parser = DocParser(args.doc_segmentation)
     doc_embedder = DocEmbedder(args.modelhub_model, args.pooling_mode, args.do_lower_case)
     progress_logger = ProgressLogger(args.logging_interval)
     doc_filter = DocFilter(keys_to_keep=["pmid", "embeddings", "Descriptor_UIs", "newFGDescriptors"])
     
-    with open(args.dest_jsonl, "w") as f_out:
-        with open(args.test_docs_jsonl) as f_in:
-            for line in f_in:
-                doc = json.loads(line)
-                doc = doc_parser.add_parsed_text(doc)
-                doc = doc_embedder.add_embeddings(doc)
-                doc = doc_filter.filter(doc)
-                doc = progress_logger.log(doc)
-                f_out.write(json.dumps(doc))
+    client = Client(n_workers=1)    # noqa: F841
+    db.read_text(args.test_docs_jsonl).map(json.loads).map(doc_parser.add_parsed_text).map(doc_embedder.add_embeddings).map(doc_filter.filter).map(progress_logger.log).map(json.dumps).to_textfiles([args.dest_jsonl_xz])
