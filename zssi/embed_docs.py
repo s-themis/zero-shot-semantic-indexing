@@ -70,7 +70,6 @@ if __name__ == "__main__":
 
     import argparse
     import json
-    import lzma
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--test_docs_jsonl", type=str)
@@ -78,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("--pooling_mode", type=str)
     parser.add_argument("--doc_segmentation", action="store_true")
     parser.add_argument("--do_lower_case", action="store_true")
-    parser.add_argument("--dest_jsonl_xz", type=str)
+    parser.add_argument("--dest_jsonl", type=str)
     parser.add_argument("--logging_interval", type=int)
     args = parser.parse_args()
   
@@ -87,7 +86,7 @@ if __name__ == "__main__":
     progress_logger = ProgressLogger(args.logging_interval)
     doc_filter = DocFilter(keys_to_keep=["pmid", "embeddings", "Descriptor_UIs", "newFGDescriptors"])
     
-    with lzma.open(args.dest_jsonl_xz, "w") as f_out:
+    with open(args.dest_jsonl, "w") as f_out:
         with open(args.test_docs_jsonl) as f_in:
             for line in f_in:
                 doc = json.loads(line)
@@ -95,4 +94,4 @@ if __name__ == "__main__":
                 doc = doc_embedder.add_embeddings(doc)
                 doc = doc_filter.filter(doc)
                 doc = progress_logger.log(doc)
-                f_out.write(json.dumps(doc).encode())
+                f_out.write(json.dumps(doc))
