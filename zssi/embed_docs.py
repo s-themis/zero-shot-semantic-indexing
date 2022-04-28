@@ -94,4 +94,4 @@ if __name__ == "__main__":
                 doc = doc_embedder.add_embeddings(doc)
                 doc = doc_filter.filter(doc)
                 doc = progress_logger.log(doc)
-                f_out.write(json.dumps(doc))
+                f_out.write(json.dumps(doc) + "\n")
