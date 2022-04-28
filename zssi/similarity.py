@@ -1,63 +1,68 @@
-if __name__ == "__main__":    # noqa: C901
 
-    import json
-    from typing import Callable, List
+import json
+import numpy as np
+import tqdm
 
-    import dask.bag as db
-    import numpy as np
-    from dask.distributed import Client
+def load_descriptors(descriptors_embedding_file):
+    descriptors = []
+    with open(descriptors_embedding_file) as f:
+        for line in f:
+            descriptors.append(json.loads(line))
+    for descriptor in descriptors:
+        descriptor["embedding"] = np.array(descriptor["embedding"])
+        descriptor["PHex UIs"] = set(descriptor["PHex UIs"])
+    return descriptors
 
-    def load_descriptors(descriptors_embedding_file):
-        descriptors = []
-        with open(descriptors_embedding_file) as f:
-            for line in f:
-                descriptors.append(json.loads(line))
-        for descriptor in descriptors:
-            descriptor["embedding"] = np.array(descriptor["embedding"])
-            descriptor["PHex_UI"] = set(descriptor["PHex_UI"])
-        return descriptors
+def preprocess_doc(doc):
+    doc["embeddings"] = list(map(np.array, doc["embeddings"]))
+    doc["Descriptor_UIs_set"] = set(doc["Descriptor_UIs"])
+    doc["newFGDescriptors_set"] = set(doc["newFGDescriptors"])
+    return doc
 
-    def preprocess_doc(doc):
-        doc["embeddings"] = list(map(np.array, doc["embeddings"]))
-        doc["Descriptor_UIs"] = set(doc["Descriptor_UIs"])
-        doc["newFGDescriptors"] = set(doc["newFGDescriptors"])
-        return doc
+def cos_sim(embedding_1: np.array, embedding_2: np.array) -> float:
+    return np.inner(embedding_1, embedding_2) / (np.linalg.norm(embedding_1) * np.linalg.norm(embedding_2))
 
-    def cosine_similarity(embedding_1: np.array, embedding_2: np.array) -> float:
-        return np.inner(embedding_1, embedding_2) / (np.linalg.norm(embedding_1) * np.linalg.norm(embedding_2))
+def add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, sim_func):
+    doc["similarities"] = []
+    doc["true"] = []
+    for descr in descriptors:
+        if descr["PHex UIs"].intersection(doc["Descriptor_UIs_set"]):
+            doc["similarities"].append(list(map(lambda doc_embedding: sim_func(doc_embedding, descr["embedding"]), doc["embeddings"])))
+            doc["true"].append(int(descr["Descr. UI"] in doc["Descriptor_UIs_set"]))
+        else:
+            doc["similarities"].append([0] * len(doc["embeddings"]))
+            doc["true"].append(0)
+    doc["max_similarities"] = list(map(max, doc["similarities"]))
+    doc["avg_similarities"] = list(map(lambda x: sum(x) / len(x), doc["similarities"]))
+    doc["min_similarities"] = list(map(min, doc["similarities"]))
+    del doc["embeddings"]
+    del doc["Descriptor_UIs_set"]
+    del doc["newFGDescriptors_set"]
+    return doc
 
-    def add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, similarity_func):
-        for descriptor in descriptors:
-            if descriptor["PHex_UI"].intersection(doc["Descriptor_UIs"]):
-                descriptor_UI = descriptor["UI"]
-                doc[f"{descriptor_UI}_true"] = descriptor_UI in doc["newFGDescriptors"]
-                doc[f"{descriptor_UI}_sims"] = list(map(lambda doc_embedding: similarity_func(doc_embedding, descriptor["embedding"]), doc["embeddings"]))
-                doc[f"{descriptor_UI}_sim_min"] = min(doc[f"{descriptor_UI}_sims"])
-                doc[f"{descriptor_UI}_sim_mean"] = sum(doc[f"{descriptor_UI}_sims"]) / len(doc[f"{descriptor_UI}_sims"])
-                doc[f"{descriptor_UI}_sim_max"] = max(doc[f"{descriptor_UI}_sims"])
-        return doc
+def calculate_similarities(docs_embeddings_jsonl, descrs_embeddings_jsonl, dest_jsonl):
+    descriptors = load_descriptors(descrs_embeddings_jsonl)
+    with open(dest_jsonl, "w") as f_out:
+        with open(docs_embeddings_jsonl, "r") as f_in:
+            with tqdm.tqdm(total=500000) as pr_bar:
+                for i, line in enumerate(f_in):
+                    doc = json.loads(line)
+                    doc = preprocess_doc(doc)
+                    doc = add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, cos_sim)
+                    f_out.write(json.dumps(doc) + "\n")
+                    pr_bar.update(1)
 
-    def to_output_doc(doc):
-        del doc["Descriptor_UIs"]
-        del doc["newFGDescriptors"]
-        del doc["embeddings"]
-        return doc
+if __name__ == "__main__":
 
-    def similarity(docs_embeddings_file: str, descriptors_embedding_file: str, destination_files: List[str], similarity_func: Callable):
-        """
-        Calculate the similarities between document and descriptor embeddings.
+    import argparse
 
-        Args:
-            docs_embeddings_file (str): file or glob pattern for embeddings of docs
-            descriptors_embeddings_file (str): file or glob pattern for embeddings of descriptors
-            destination_file (str): file or glob pattern for output
-            similarity_func (callable): function that calculates the similarity between two embeddings
-        """
-        client = Client(n_workers=8)    # noqa: F841
-        descriptors = load_descriptors(descriptors_embedding_file)
-        db.read_text(docs_embeddings_file).map(json.loads).map(preprocess_doc).map(lambda doc: add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, similarity_func)).map(to_output_doc).map(json.dumps).to_textfiles(destination_file)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--docs_embeddings_jsonl", type=str)
+    parser.add_argument("--descrs_embeddings_jsonl", type=str)
+    parser.add_argument("--dest_jsonl", type=str)
+    args = parser.parse_args()
 
-    docs_embeddings_file = "data/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/embeddings/test_docs_2006_wholetext.jsonl.xz"
-    descriptors_embedding_file = "data/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/embeddings/descriptors_2006_name.jsonl"
-    destination_file = ["data/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_cls/similarities/wholetext_name_2006.jsonl.xz"]
-    similarity(docs_embeddings_file, descriptors_embedding_file, destination_file, cosine_similarity)
+    calculate_similarities(
+        args.docs_embeddings_jsonl,
+        args.descrs_embeddings_jsonl,
+        args.dest_jsonl)
