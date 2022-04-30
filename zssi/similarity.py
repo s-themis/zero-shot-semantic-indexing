@@ -3,6 +3,8 @@ import json
 import numpy as np
 import tqdm
 
+from more_itertools import chunked
+
 def load_descriptors(descriptors_embedding_file):
     descriptors = []
     with open(descriptors_embedding_file) as f:
@@ -45,12 +47,16 @@ def calculate_similarities(docs_embeddings_jsonl, descrs_embeddings_jsonl, dest_
     with open(dest_jsonl, "w") as f_out:
         with open(docs_embeddings_jsonl, "r") as f_in:
             with tqdm.tqdm(total=500000) as pr_bar:
-                for i, line in enumerate(f_in):
-                    doc = json.loads(line)
-                    doc = preprocess_doc(doc)
-                    doc = add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, cos_sim)
-                    f_out.write(json.dumps(doc) + "\n")
-                    pr_bar.update(1)
+                for lines_in in chunked(f_in, 1000):
+                    lines_out = []
+                    for line_in in lines_in:
+                        doc = json.loads(line_in)
+                        doc = preprocess_doc(doc)
+                        doc = add_true_label_and_similarity_for_valid_descriptors(doc, descriptors, cos_sim)
+                        line_out = json.dumps(doc) + "\n"
+                        lines_out.append(line_out)
+                    f_out.writelines(lines_out)
+                    pr_bar.update(1000)
 
 if __name__ == "__main__":
 
